@@ -1,0 +1,11 @@
+<virtualhost *:80>
+    
+    servername "{{ apache_domain }}"
+    documentroot /var/www/html
+    directoryindex index.php index.html
+    <directory "/var/www/html">
+        allowoverride all
+        options -indexes
+    </directory>
+    
+</virtualhost>

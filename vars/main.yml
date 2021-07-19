@@ -1,0 +1,10 @@
+---
+# vars file for lamp
+
+mysql_root: " "
+database: " "
+password: " "
+username: " "
+wordpress_url: "http://wordpress.org/latest.tar.gz"
+apache_owner: "apache"
+apache_domain: "apache.devopstraining.tech"

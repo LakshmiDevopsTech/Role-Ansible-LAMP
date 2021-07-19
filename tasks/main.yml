@@ -1,0 +1,96 @@
+---
+# tasks file for lamp
+
+- name: "apache and mariadb - Package Installation"
+  yum:
+    name: 
+      - httpd
+      - mariadb-server
+      - MySQL-python
+    state: present
+- name: "Install PHP"
+  shell: amazon-linux-extras install php7.4 -y
+  notify:
+    - restart-apache
+
+- name: "mariadb - Restarting/Enabling"
+  service:
+    name: mariadb
+    state: restarted
+    enabled: true
+ 
+
+- name: "set root password for mariadb"
+  ignore_errors: true
+  mysql_user:
+    login_user: root
+    login_password: ""
+    user: root
+    password: "{{ mysql_root }}"
+    host_all: true
+
+- name: "Remove anonymous user mariadb"
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root }}"
+    name: ""
+    host_all: yes
+    state: absent
+
+- name: "Remove test database from mariadb"
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root }}"
+    name: test
+    state: absent
+
+- name: create database for wordpress"
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root }}"
+    name: "{{ database }}"
+    state: present
+
+- name: "create wordpress user"
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root }}"
+    user: "{{ username }}"
+    password: "{{ password }}"
+    priv: '{{ database }}.*:ALL'
+    state: present
+
+- name: "Download wordpress url"
+  get_url:
+    url: "{{ wordpress_url }}"
+    dest: /usr/local/src
+
+- name: "unzip downloaded file"
+  unarchive:
+    src: /usr/local/src/wordpress-5.7.2.tar.gz
+    dest: /usr/local/src
+    remote_src: yes
+
+- name: "copy content to web path"
+  copy:
+    src: "/usr/local/src/wordpress/"
+    dest: /var/www/html/
+    remote_src: yes
+    owner: "{{ apache_owner }}"
+    group: "{{ apache_owner }}"
+  notify:
+    - restart-apache
+
+- name: "copy wp-config.php file"
+  template:
+    src: sample-wp.tmpl
+    dest: /var/www/html/wp-config.php
+  notify:
+    - restart-apache
+
+- name: "copy apache-vhost file"
+  template:
+    src: apache-wordpress-host.tmpl
+    dest: "/etc/httpd/conf.d/{{ apache_domain }}.conf"
+  notify:
+    - restart-apache
